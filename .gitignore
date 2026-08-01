@@ -23,3 +23,5 @@ log/
 .env
 .env.*
 *.txt
+
+/gen

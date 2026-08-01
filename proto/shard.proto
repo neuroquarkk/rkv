@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package shard;
+
+option go_package = "./";
+
+message PutRequest {
+  string key = 1;
+  bytes  data = 2;
+}
+
+message GetRequest {
+  string key = 1;
+}
+
+message ExistsRequest {
+  string key = 1;
+}
+
+message DeleteRequest {
+  string key = 1;
+}
+
+message PutResponse {
+  // empty for now
+}
+
+message GetResponse {
+  bytes data = 1;
+}
+
+message ExistsResponse {
+  bool exists = 1;
+}
+
+message DeleteResponse {
+  // empty for now
+}
+
+service ShardService {
+  rpc Put(PutRequest) returns (PutResponse);
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc Exists(ExistsRequest) returns (ExistsResponse);
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+}
