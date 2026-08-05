@@ -31,7 +31,7 @@ func Logger(next http.Handler) http.Handler {
 			rw.code,
 			duration,
 			r.Method,
-			r.URL.Path,
+			r.Pattern,
 		)
 	})
 }

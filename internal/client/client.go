@@ -47,3 +47,11 @@ func New(ctx context.Context, addr string) (*Client, error) {
 func (c *Client) Close() {
 	c.conn.Close()
 }
+
+func (c *Client) Put(ctx context.Context, key string, data []byte) error {
+	_, err := c.Client.Put(ctx, &pb.PutRequest{Key: key, Data: data})
+	if err != nil {
+		return err
+	}
+	return nil
+}
