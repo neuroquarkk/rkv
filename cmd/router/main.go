@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -10,12 +11,14 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
 	port, ok := os.LookupEnv("PORT")
 	if !ok {
 		port = "8081"
 	}
 
-	client, err := client.New("http://localhost:8080")
+	client, err := client.New(ctx, "localhost:8080")
 	if err != nil {
 		log.Fatalf("could not connect to shard: %v\n", err)
 	}

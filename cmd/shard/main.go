@@ -10,6 +10,8 @@ import (
 	"rkv/internal/store"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 func main() {
@@ -28,6 +30,11 @@ func main() {
 
 	server := grpc.NewServer()
 	pb.RegisterShardServiceServer(server, service)
+
+	healthServer := health.NewServer()
+	healthpb.RegisterHealthServer(server, healthServer)
+
+	healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
 	log.Printf("service starting on PORT: %v\n", lis.Addr())
 	if err := server.Serve(lis); err != nil {
