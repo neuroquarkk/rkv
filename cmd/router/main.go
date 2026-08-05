@@ -25,7 +25,7 @@ func main() {
 	defer client.Close()
 	log.Println("shard client connected successfully")
 
-	handler := handler.New(client.Client)
+	handler := handler.New(client)
 
 	mux := http.NewServeMux()
 

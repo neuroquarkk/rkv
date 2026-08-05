@@ -2,14 +2,14 @@ package handler
 
 import (
 	"net/http"
-	pb "rkv/gen"
+	"rkv/internal/client"
 )
 
 type Handler struct {
-	client pb.ShardServiceClient
+	client *client.Client
 }
 
-func New(client pb.ShardServiceClient) *Handler {
+func New(client *client.Client) *Handler {
 	return &Handler{client}
 }
 
