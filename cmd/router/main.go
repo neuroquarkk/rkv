@@ -31,6 +31,9 @@ func main() {
 
 	mux.HandleFunc("GET /ping", handler.Ping)
 	mux.HandleFunc("PUT /put/{key}", handler.Put)
+	mux.HandleFunc("GET /get/{key}", handler.Get)
+	mux.HandleFunc("DELETE /delete/{key}", handler.Delete)
+	mux.HandleFunc("HEAD /key/{key}", handler.Exists)
 
 	server := &http.Server{
 		Addr:    ":" + port,

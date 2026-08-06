@@ -61,3 +61,100 @@ func (h *Handler) Put(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
+	key := r.PathValue("key")
+	if len(key) > 256 || key == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	data, err := h.client.Get(r.Context(), key)
+	if err != nil {
+		st, ok := status.FromError(err)
+		if !ok {
+			log.Printf("unexpected status: %v\n", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		switch st.Code() {
+		case codes.NotFound:
+			w.WriteHeader(http.StatusNotFound)
+		case codes.Internal:
+			w.WriteHeader(http.StatusInternalServerError)
+		default:
+			log.Printf("grpc error: code=%s, msg=%v\n", st.Code(), st.Message())
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	resp := GetResp{Key: key, Data: string(data)}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&resp)
+}
+
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+	key := r.PathValue("key")
+	if len(key) > 256 || key == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if err := h.client.Delete(r.Context(), key); err != nil {
+		st, ok := status.FromError(err)
+		if !ok {
+			log.Printf("unexpected status: %v\n", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		switch st.Code() {
+		case codes.NotFound:
+			w.WriteHeader(http.StatusNotFound)
+		case codes.Internal:
+			w.WriteHeader(http.StatusInternalServerError)
+		default:
+			log.Printf("grpc error: code=%s, msg=%v\n", st.Code(), st.Message())
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) Exists(w http.ResponseWriter, r *http.Request) {
+	key := r.PathValue("key")
+	if len(key) > 256 || key == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	exists, err := h.client.Exists(r.Context(), key)
+	if err != nil {
+		st, ok := status.FromError(err)
+		if !ok {
+			log.Printf("unexpected status: %v\n", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if st.Code() == codes.NotFound {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		log.Printf("grpc error: code=%s, msg=%v\n", st.Code(), st.Message())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if !exists {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

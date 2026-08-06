@@ -50,8 +50,28 @@ func (c *Client) Close() {
 
 func (c *Client) Put(ctx context.Context, key string, data []byte) error {
 	_, err := c.Client.Put(ctx, &pb.PutRequest{Key: key, Data: data})
+	return err
+}
+
+func (c *Client) Get(ctx context.Context, key string) ([]byte, error) {
+	resp, err := c.Client.Get(ctx, &pb.GetRequest{Key: key})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+
+	data := resp.Data
+	return data, nil
+}
+
+func (c *Client) Delete(ctx context.Context, key string) error {
+	_, err := c.Client.Delete(ctx, &pb.DeleteRequest{Key: key})
+	return err
+}
+
+func (c *Client) Exists(ctx context.Context, key string) (bool, error) {
+	resp, err := c.Client.Exists(ctx, &pb.ExistsRequest{Key: key})
+	if err != nil {
+		return false, nil
+	}
+	return resp.Exists, nil
 }
