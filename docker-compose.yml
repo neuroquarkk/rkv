@@ -1,0 +1,24 @@
+services:
+  member-1:
+    build:
+      context: .
+      args:
+        APP_NAME: shard
+    environment:
+      - PORT=8080
+    restart: unless-stopped
+
+  router:
+    build:
+      context: .
+      args:
+        APP_NAME: router
+    container_name: "rkv-router"
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+    depends_on:
+      - node-1
+    environment:
+      - PORT=8081
+      - MEMBER_ADDR=member-1:8080

@@ -18,7 +18,12 @@ func main() {
 		port = "8081"
 	}
 
-	client, err := client.New(ctx, "localhost:8080")
+	memberAddr, ok := os.LookupEnv("MEMBER_ADDR")
+	if !ok {
+		memberAddr = "localhost:8080"
+	}
+
+	client, err := client.New(ctx, memberAddr)
 	if err != nil {
 		log.Fatalf("could not connect to shard: %v\n", err)
 	}

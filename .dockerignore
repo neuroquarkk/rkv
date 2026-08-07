@@ -1,0 +1,42 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Build outputs
+bin/
+build/
+dist/
+out/
+release/
+target/
+
+# Temp/cache
+tmp/
+temp/
+.cache/
+coverage/
+reports/
+artifacts/
+logs/
+log/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+scripts/

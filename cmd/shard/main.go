@@ -20,7 +20,7 @@ func main() {
 		port = "8080"
 	}
 
-	lis, err := net.Listen("tcp", "localhost:"+port)
+	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Fatalf("failed to open tcp port: %v\n", err)
 	}
