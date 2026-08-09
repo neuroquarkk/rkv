@@ -21,6 +21,10 @@ message DeleteRequest {
   string key = 1;
 }
 
+message InfoRequest {
+  // empty for now
+}
+
 message PutResponse {
   // empty for now
 }
@@ -37,9 +41,14 @@ message DeleteResponse {
   // empty for now
 }
 
+message InfoResponse {
+  string name = 1;
+}
+
 service ShardService {
   rpc Put(PutRequest) returns (PutResponse);
   rpc Get(GetRequest) returns (GetResponse);
   rpc Exists(ExistsRequest) returns (ExistsResponse);
   rpc Delete(DeleteRequest) returns (DeleteResponse);
+  rpc Info(InfoRequest) returns (InfoResponse);
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"os"
 	pb "rkv/gen"
 	"rkv/internal/store"
 
@@ -87,4 +88,17 @@ func (s *Service) Delete(
 	}
 
 	return &pb.DeleteResponse{}, nil
+}
+
+func (s *Service) Info(
+	ctx context.Context,
+	req *pb.InfoRequest,
+) (*pb.InfoResponse, error) {
+	name, err := os.Hostname()
+	if err != nil {
+		log.Printf("os error: %v\n", err)
+		return nil, status.Error(codes.Internal, "internal service error")
+	}
+
+	return &pb.InfoResponse{Name: name}, nil
 }

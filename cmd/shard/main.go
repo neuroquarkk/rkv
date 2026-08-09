@@ -6,6 +6,7 @@ import (
 	"os"
 
 	pb "rkv/gen"
+	"rkv/internal/interceptor"
 	"rkv/internal/service"
 	"rkv/internal/store"
 
@@ -28,7 +29,9 @@ func main() {
 	st := store.New()
 	service := service.New(st)
 
-	server := grpc.NewServer()
+	server := grpc.NewServer(
+		grpc.UnaryInterceptor(interceptor.LoggingInterceptor),
+	)
 	pb.RegisterShardServiceServer(server, service)
 
 	healthServer := health.NewServer()
