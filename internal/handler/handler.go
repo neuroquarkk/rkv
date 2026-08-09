@@ -158,3 +158,16 @@ func (h *Handler) Exists(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *Handler) Info(w http.ResponseWriter, r *http.Request) {
+	name, err := h.client.Info(r.Context())
+	if err != nil {
+		log.Printf("unexpected error: %v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	resp := &InfoResp{Name: name}
+	w.Header().Add("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}

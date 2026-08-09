@@ -18,7 +18,7 @@ services:
       - "8081:8081"
     restart: unless-stopped
     depends_on:
-      - node-1
+      - member-1
     environment:
       - PORT=8081
       - MEMBER_ADDR=member-1:8080

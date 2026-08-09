@@ -71,7 +71,15 @@ func (c *Client) Delete(ctx context.Context, key string) error {
 func (c *Client) Exists(ctx context.Context, key string) (bool, error) {
 	resp, err := c.Client.Exists(ctx, &pb.ExistsRequest{Key: key})
 	if err != nil {
-		return false, nil
+		return false, err
 	}
 	return resp.Exists, nil
+}
+
+func (c *Client) Info(ctx context.Context) (string, error) {
+	resp, err := c.Client.Info(ctx, &pb.InfoRequest{})
+	if err != nil {
+		return "", err
+	}
+	return resp.Name, nil
 }

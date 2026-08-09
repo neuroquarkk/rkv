@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+
 	"rkv/internal/client"
 	"rkv/internal/handler"
 	"rkv/internal/middleware"
@@ -39,6 +40,7 @@ func main() {
 	mux.HandleFunc("GET /get/{key}", handler.Get)
 	mux.HandleFunc("DELETE /delete/{key}", handler.Delete)
 	mux.HandleFunc("HEAD /key/{key}", handler.Exists)
+	mux.HandleFunc("GET /info", handler.Info)
 
 	server := &http.Server{
 		Addr:    ":" + port,

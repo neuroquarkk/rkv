@@ -8,3 +8,7 @@ type GetResp struct {
 	Key  string `json:"key"`
 	Data string `json:"data"`
 }
+
+type InfoResp struct {
+	Name string `json:"name"`
+}

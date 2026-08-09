@@ -36,11 +36,12 @@ func LoggingInterceptor(
 func extractKey(req any) string {
 	switch r := req.(type) {
 	case *pb.GetRequest:
+		return r.Key
 	case *pb.PutRequest:
+		return r.Key
 	case *pb.DeleteRequest:
 		return r.Key
 	default:
 		return "-"
 	}
-	return "-"
 }
