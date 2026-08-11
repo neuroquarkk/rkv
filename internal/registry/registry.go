@@ -1,4 +1,4 @@
-package pool
+package registry
 
 import (
 	"context"
@@ -81,8 +81,8 @@ func New(
 	}, nil
 }
 
-func (p *Registry) Close() {
-	for _, c := range p.conns {
+func (r *Registry) Close() {
+	for _, c := range r.conns {
 		c.Close()
 	}
 }

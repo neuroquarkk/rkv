@@ -4,17 +4,17 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"rkv/internal/client"
+	"rkv/internal/dispatcher"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type Handler struct {
-	client *client.Client
+	client *dispatcher.Client
 }
 
-func New(client *client.Client) *Handler {
+func New(client *dispatcher.Client) *Handler {
 	return &Handler{client}
 }
 
@@ -42,7 +42,8 @@ func (h *Handler) Put(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.client.Put(r.Context(), key, []byte(value)); err != nil {
+	err := h.client.Put(r.Context(), key, []byte(value))
+	if err != nil {
 		st, ok := status.FromError(err)
 		if !ok {
 			log.Printf("unexpected status: %v\n", err)

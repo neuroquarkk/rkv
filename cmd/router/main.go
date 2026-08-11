@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"os"
 
-	"rkv/internal/client"
+	"rkv/internal/dispatcher"
 	"rkv/internal/handler"
 	"rkv/internal/middleware"
+	"rkv/internal/registry"
 )
 
 func main() {
@@ -19,20 +20,21 @@ func main() {
 		port = "8081"
 	}
 
-	memberAddr, ok := os.LookupEnv("MEMBER_ADDR")
+	memberAddrs, ok := os.LookupEnv("MEMBER_ADDR")
 	if !ok {
-		memberAddr = "localhost:8080"
+		memberAddrs = "localhost:8080,localhost:8082"
 	}
 
-	client, err := client.New(ctx, memberAddr)
+	reg, err := registry.New(ctx, memberAddrs)
 	if err != nil {
-		log.Fatalf("could not connect to shard: %v\n", err)
+		log.Fatalf("failed to create new pool: %v\n", err)
 	}
-	defer client.Close()
-	log.Println("shard client connected successfully")
+	defer reg.Close()
+	log.Printf("%d members connected\n", len(reg.Clients))
 
-	handler := handler.New(client)
+	disp := dispatcher.New(reg)
 
+	handler := handler.New(disp)
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /ping", handler.Ping)

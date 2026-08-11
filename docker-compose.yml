@@ -8,6 +8,15 @@ services:
       - PORT=8080
     restart: unless-stopped
 
+  member-2:
+    build:
+      context: .
+      args:
+        APP_NAME: shard
+    environment:
+      - PORT=8080
+    restart: unless-stopped
+
   router:
     build:
       context: .
@@ -19,6 +28,7 @@ services:
     restart: unless-stopped
     depends_on:
       - member-1
+      - member-2
     environment:
       - PORT=8081
-      - MEMBER_ADDR=member-1:8080
+      - MEMBER_ADDR=member-1:8080,member-2:8080
