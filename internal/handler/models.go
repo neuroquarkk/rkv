@@ -10,5 +10,5 @@ type GetResp struct {
 }
 
 type InfoResp struct {
-	Name string `json:"name"`
+	Names []string `json:"names"`
 }

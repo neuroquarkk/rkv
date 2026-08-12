@@ -16,10 +16,11 @@ import (
 
 type Registry struct {
 	conns   []*grpc.ClientConn
-	Clients []pb.ShardServiceClient
+	Clients map[string]pb.ShardServiceClient
 }
 
 type connResult struct {
+	addr   string
 	conn   *grpc.ClientConn
 	client pb.ShardServiceClient
 	err    error
@@ -35,7 +36,7 @@ func New(
 	}
 
 	conns := make([]*grpc.ClientConn, 0, len(members))
-	clients := make([]pb.ShardServiceClient, 0, len(members))
+	clients := make(map[string]pb.ShardServiceClient, len(members))
 
 	var wg sync.WaitGroup
 	ch := make(chan connResult, len(members))
@@ -58,7 +59,7 @@ func New(
 			continue
 		}
 		conns = append(conns, res.conn)
-		clients = append(clients, res.client)
+		clients[res.addr] = res.client
 	}
 
 	if len(errs) > 0 {
@@ -112,5 +113,5 @@ func conn(ctx context.Context, addr string, ch chan<- connResult) {
 	}
 
 	client := pb.NewShardServiceClient(conn)
-	ch <- connResult{conn: conn, client: client}
+	ch <- connResult{addr: addr, conn: conn, client: client}
 }
