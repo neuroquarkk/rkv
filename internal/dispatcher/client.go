@@ -10,9 +10,12 @@ func (c *Client) Put(
 	key string,
 	data []byte,
 ) error {
-	client := c.getClient(key)
+	client, err := c.getClient(key)
+	if err != nil {
+		return err
+	}
 
-	_, err := client.Put(ctx, &pb.PutRequest{
+	_, err = client.Put(ctx, &pb.PutRequest{
 		Key:  key,
 		Data: data,
 	})
@@ -20,7 +23,10 @@ func (c *Client) Put(
 }
 
 func (c *Client) Get(ctx context.Context, key string) ([]byte, error) {
-	client := c.getClient(key)
+	client, err := c.getClient(key)
+	if err != nil {
+		return nil, err
+	}
 
 	resp, err := client.Get(ctx, &pb.GetRequest{Key: key})
 	if err != nil {
@@ -32,14 +38,20 @@ func (c *Client) Get(ctx context.Context, key string) ([]byte, error) {
 }
 
 func (c *Client) Delete(ctx context.Context, key string) error {
-	client := c.getClient(key)
+	client, err := c.getClient(key)
+	if err != nil {
+		return err
+	}
 
-	_, err := client.Delete(ctx, &pb.DeleteRequest{Key: key})
+	_, err = client.Delete(ctx, &pb.DeleteRequest{Key: key})
 	return err
 }
 
 func (c *Client) Exists(ctx context.Context, key string) (bool, error) {
-	client := c.getClient(key)
+	client, err := c.getClient(key)
+	if err != nil {
+		return false, err
+	}
 
 	resp, err := client.Exists(ctx, &pb.ExistsRequest{Key: key})
 	if err != nil {
@@ -49,10 +61,13 @@ func (c *Client) Exists(ctx context.Context, key string) (bool, error) {
 }
 
 func (c *Client) Info(ctx context.Context) ([]string, error) {
-	addr := make([]string, 0, len(c.cluster.Clients))
+	addr := make([]string, 0, len(c.clients))
 
-	for _, c := range c.cluster.Clients {
-		resp, err := c.Info(ctx, &pb.InfoRequest{})
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	for _, sc := range c.clients {
+		resp, err := sc.Info(ctx, &pb.InfoRequest{})
 		if err != nil {
 			return nil, err
 		}

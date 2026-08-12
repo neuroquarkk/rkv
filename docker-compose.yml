@@ -1,20 +1,14 @@
 services:
-  member-1:
+  registry:
     build:
       context: .
       args:
-        APP_NAME: shard
+        APP_NAME: registry
+    container_name: "rkv-registry"
+    ports:
+      - "8010:8010"
     environment:
-      - PORT=8080
-    restart: unless-stopped
-
-  member-2:
-    build:
-      context: .
-      args:
-        APP_NAME: shard
-    environment:
-      - PORT=8080
+      PORT: 8010
     restart: unless-stopped
 
   router:
@@ -23,12 +17,50 @@ services:
       args:
         APP_NAME: router
     container_name: "rkv-router"
+    environment:
+      PORT: 8081
+      REGISTRY_URL: registry:8010
     ports:
       - "8081:8081"
     restart: unless-stopped
     depends_on:
-      - member-1
-      - member-2
+      - registry
+
+  member-1:
+    build:
+      context: .
+      args:
+        APP_NAME: shard
     environment:
-      - PORT=8081
-      - MEMBER_ADDR=member-1:8080,member-2:8080
+      PORT: 8080
+      SHARD_ADDR: member-1:8080
+      REGISTRY_URL: registry:8010
+    restart: unless-stopped
+    depends_on:
+      - registry
+
+  member-2:
+    build:
+      context: .
+      args:
+        APP_NAME: shard
+    environment:
+      PORT: 8080
+      SHARD_ADDR: member-2:8080
+      REGISTRY_URL: registry:8010
+    restart: unless-stopped
+    depends_on:
+      - registry
+
+  member-3:
+    build:
+      context: .
+      args:
+        APP_NAME: shard
+    environment:
+      PORT: 8080
+      SHARD_ADDR: member-3:8080
+      REGISTRY_URL: registry:8010
+    restart: unless-stopped
+    depends_on:
+      - registry

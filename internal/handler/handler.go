@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"rkv/internal/dispatcher"
@@ -44,6 +45,11 @@ func (h *Handler) Put(w http.ResponseWriter, r *http.Request) {
 
 	err := h.client.Put(r.Context(), key, []byte(value))
 	if err != nil {
+		if errors.Is(err, dispatcher.ErrNoMembers) {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
 		st, ok := status.FromError(err)
 		if !ok {
 			log.Printf("unexpected status: %v\n", err)
@@ -72,6 +78,11 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 
 	data, err := h.client.Get(r.Context(), key)
 	if err != nil {
+		if errors.Is(err, dispatcher.ErrNoMembers) {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
 		st, ok := status.FromError(err)
 		if !ok {
 			log.Printf("unexpected status: %v\n", err)
@@ -104,6 +115,11 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.client.Delete(r.Context(), key); err != nil {
+		if errors.Is(err, dispatcher.ErrNoMembers) {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
 		st, ok := status.FromError(err)
 		if !ok {
 			log.Printf("unexpected status: %v\n", err)
@@ -135,6 +151,11 @@ func (h *Handler) Exists(w http.ResponseWriter, r *http.Request) {
 
 	exists, err := h.client.Exists(r.Context(), key)
 	if err != nil {
+		if errors.Is(err, dispatcher.ErrNoMembers) {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
 		st, ok := status.FromError(err)
 		if !ok {
 			log.Printf("unexpected status: %v\n", err)

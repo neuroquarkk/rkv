@@ -9,7 +9,7 @@ import (
 	"rkv/internal/dispatcher"
 	"rkv/internal/handler"
 	"rkv/internal/middleware"
-	"rkv/internal/registry"
+	"rkv/internal/registry/poller"
 )
 
 func main() {
@@ -20,19 +20,16 @@ func main() {
 		port = "8081"
 	}
 
-	memberAddrs, ok := os.LookupEnv("MEMBER_ADDR")
+	registryUrl, ok := os.LookupEnv("REGISTRY_URL")
 	if !ok {
-		memberAddrs = "localhost:8080,localhost:8082"
+		registryUrl = "localhost:8010"
 	}
 
-	reg, err := registry.New(ctx, memberAddrs)
-	if err != nil {
-		log.Fatalf("failed to create new pool: %v\n", err)
-	}
-	defer reg.Close()
-	log.Printf("%d members connected\n", len(reg.Clients))
+	addrsChan := make(chan []string, 1)
+	disp := dispatcher.New()
 
-	disp := dispatcher.New(reg)
+	poller.Start(ctx, registryUrl, addrsChan)
+	disp.Start(ctx, addrsChan)
 
 	handler := handler.New(disp)
 	mux := http.NewServeMux()

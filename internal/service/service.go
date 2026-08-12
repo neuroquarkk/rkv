@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log"
-	"os"
 	pb "rkv/gen"
 	"rkv/internal/store"
 
@@ -15,10 +14,11 @@ import (
 type Service struct {
 	pb.UnimplementedShardServiceServer
 	store *store.Store
+	addr  string
 }
 
-func New(store *store.Store) *Service {
-	return &Service{store: store}
+func New(store *store.Store, addr string) *Service {
+	return &Service{store: store, addr: addr}
 }
 
 func (s *Service) Put(
@@ -94,11 +94,5 @@ func (s *Service) Info(
 	ctx context.Context,
 	req *pb.InfoRequest,
 ) (*pb.InfoResponse, error) {
-	name, err := os.Hostname()
-	if err != nil {
-		log.Printf("os error: %v\n", err)
-		return nil, status.Error(codes.Internal, "internal service error")
-	}
-
-	return &pb.InfoResponse{Name: name}, nil
+	return &pb.InfoResponse{Name: s.addr}, nil
 }

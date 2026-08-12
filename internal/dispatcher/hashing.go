@@ -1,17 +1,32 @@
 package dispatcher
 
 import (
+	"errors"
 	"hash/fnv"
 	pb "rkv/gen"
 )
 
-func (c *Client) getClient(key string) pb.ShardServiceClient {
+var ErrNoMembers = errors.New("no members available")
+
+func (c *Client) getClient(key string) (pb.ShardServiceClient, error) {
 	var hashVal uint64
 	var target string
 
 	f := fnv.New64a()
-	for addr := range c.cluster.Clients {
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if len(c.clients) == 0 {
+		return nil, ErrNoMembers
+	}
+
+	// Rendezvous Hashing
+	// hash the key along with the active member's address
+	// member which produce highest hash wins
+	for addr := range c.clients {
 		f.Write([]byte(key))
+		f.Write([]byte(":"))
 		f.Write([]byte(addr))
 		s := f.Sum64()
 
@@ -23,5 +38,5 @@ func (c *Client) getClient(key string) pb.ShardServiceClient {
 		f.Reset()
 	}
 
-	return c.cluster.Clients[target]
+	return c.clients[target], nil
 }
