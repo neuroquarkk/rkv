@@ -4,22 +4,18 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
-	"time"
 
+	"rkv/internal/config"
+	"rkv/internal/constants"
 	"rkv/internal/registry/server"
 )
 
 func main() {
 	ctx := context.Background()
+	cfg := config.NewRegistry()
 
-	port, ok := os.LookupEnv("PORT")
-	if !ok {
-		port = "8010"
-	}
-
-	rs := server.New(15 * time.Second)
-	rs.Sweeper(ctx, 5*time.Second)
+	rs := server.New(constants.StaleInterval)
+	rs.Sweeper(ctx, constants.SweeperTick)
 
 	mux := http.NewServeMux()
 
@@ -27,11 +23,11 @@ func main() {
 	mux.HandleFunc("GET /members", rs.Members)
 
 	server := &http.Server{
-		Addr:    ":" + port,
+		Addr:    ":" + cfg.PORT,
 		Handler: mux,
 	}
 
-	log.Printf("starting registry server on port %s...\n", port)
+	log.Printf("starting registry server on port %s...\n", cfg.PORT)
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("failed to start registry server: %v\n", err)
 	}

@@ -4,10 +4,10 @@ import (
 	"context"
 	"log"
 	"net"
-	"os"
-	"time"
 
 	pb "rkv/gen"
+	"rkv/internal/config"
+	"rkv/internal/constants"
 	"rkv/internal/interceptor"
 	"rkv/internal/registry/reporter"
 	"rkv/internal/service"
@@ -18,31 +18,19 @@ import (
 
 func main() {
 	ctx := context.Background()
+	cfg := config.NewShard()
 
-	port, ok := os.LookupEnv("PORT")
-	if !ok {
-		port = "8080"
-	}
-
-	registryUrl, ok := os.LookupEnv("REGISTRY_URL")
-	if !ok {
-		registryUrl = "localhost:8010"
-	}
-
-	shardAddr, ok := os.LookupEnv("SHARD_ADDR")
-	if !ok {
-		shardAddr = "localhost:" + port
-	}
-
-	lis, err := net.Listen("tcp", ":"+port)
+	lis, err := net.Listen("tcp", cfg.PORT)
 	if err != nil {
 		log.Fatalf("failed to open tcp port: %v\n", err)
 	}
 
 	st := store.New()
-	reporter.Start(ctx, registryUrl, shardAddr, 5*time.Second)
+	reporter.Start(
+		ctx, cfg.REGISTRY_URL, cfg.SHARD_ADDR, constants.ReporterTick,
+	)
 
-	service := service.New(st, shardAddr)
+	service := service.New(st, cfg.SHARD_ADDR)
 
 	server := grpc.NewServer(
 		grpc.UnaryInterceptor(interceptor.LoggingInterceptor),

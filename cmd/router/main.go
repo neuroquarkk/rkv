@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
 
+	"rkv/internal/config"
 	"rkv/internal/dispatcher"
 	"rkv/internal/handler"
 	"rkv/internal/middleware"
@@ -14,21 +14,13 @@ import (
 
 func main() {
 	ctx := context.Background()
-
-	port, ok := os.LookupEnv("PORT")
-	if !ok {
-		port = "8081"
-	}
-
-	registryUrl, ok := os.LookupEnv("REGISTRY_URL")
-	if !ok {
-		registryUrl = "localhost:8010"
-	}
+	cfg := config.NewRouter()
 
 	addrsChan := make(chan []string, 1)
 	disp := dispatcher.New()
+	poller := poller.New(cfg.REGISTRY_URL)
 
-	poller.Start(ctx, registryUrl, addrsChan)
+	poller.Start(ctx, addrsChan)
 	disp.Start(ctx, addrsChan)
 
 	handler := handler.New(disp)
@@ -42,11 +34,11 @@ func main() {
 	mux.HandleFunc("GET /info", handler.Info)
 
 	server := &http.Server{
-		Addr:    ":" + port,
+		Addr:    ":" + cfg.PORT,
 		Handler: middleware.Logger(mux),
 	}
 
-	log.Printf("router starting on PORT: %v\n", port)
+	log.Printf("router starting on PORT: %v\n", cfg.PORT)
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("failed to serve: %v\n", err)
 	}

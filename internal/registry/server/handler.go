@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"rkv/internal/registry"
+	"strconv"
 	"time"
 )
 
@@ -21,16 +22,37 @@ func (s *Server) Heartbeat(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	_, exists := s.state[data.Address]
 	s.state[data.Address] = time.Now()
-	s.mu.Unlock()
 	if !exists {
 		log.Printf("[REGISTRY] new member joined: %v\n", data.Address)
+		s.tag++
 	}
+	s.mu.Unlock()
 
 	w.WriteHeader(http.StatusAccepted)
 }
 
 func (s *Server) Members(w http.ResponseWriter, r *http.Request) {
+	var tag uint64
+
+	tagRaw := r.Header.Get("x-tag")
+	if tagRaw != "" {
+		parsedTag, err := strconv.ParseUint(tagRaw, 10, 64)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		tag = parsedTag
+	}
+
 	s.mu.RLock()
+
+	currentTag := s.tag
+	if tag == currentTag {
+		s.mu.RUnlock()
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+
 	members := make([]string, 0, len(s.state))
 	for member := range s.state {
 		members = append(members, member)
@@ -40,5 +62,6 @@ func (s *Server) Members(w http.ResponseWriter, r *http.Request) {
 	resp := &registry.MembersResp{Members: members}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("x-tag", strconv.FormatUint(currentTag, 10))
 	json.NewEncoder(w).Encode(resp)
 }

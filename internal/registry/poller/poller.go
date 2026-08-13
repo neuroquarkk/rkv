@@ -6,29 +6,39 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"rkv/internal/constants"
 	"rkv/internal/registry"
+	"strconv"
 	"time"
 )
 
-var (
+type Poller struct {
 	client    *http.Client
 	targetUrl string
-)
+	tag       uint64
+}
 
-func Start(ctx context.Context, url string, ch chan []string) {
-	targetUrl = "http://" + url + "/members"
-
-	client = &http.Client{
-		Timeout: 2 * time.Second,
+func New(url string) *Poller {
+	client := &http.Client{
+		Timeout: constants.ClientTimeout,
 	}
+	targetUrl := "http://" + url + "/members"
 
+	return &Poller{
+		client:    client,
+		targetUrl: targetUrl,
+		tag:       0,
+	}
+}
+
+func (p *Poller) Start(ctx context.Context, ch chan []string) {
 	var initialAddrs []string
 
 	// Synchronous boot barrier
 	// block router from starting the server
 	// untill registry provides initial cluster
 	for {
-		addrs, err := fetchMembers()
+		addrs, err := p.fetchMembers()
 		if err == nil {
 			initialAddrs = addrs
 			break
@@ -45,7 +55,7 @@ func Start(ctx context.Context, url string, ch chan []string) {
 	ch <- initialAddrs
 
 	go func() {
-		ticker := time.NewTicker(5 * time.Second)
+		ticker := time.NewTicker(constants.PollerTick)
 		defer ticker.Stop()
 
 		for {
@@ -53,9 +63,13 @@ func Start(ctx context.Context, url string, ch chan []string) {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				addrs, err := fetchMembers()
+				addrs, err := p.fetchMembers()
 				if err != nil {
 					log.Printf("[ROUTER] %v\n", err)
+					continue
+				}
+
+				if addrs == nil {
 					continue
 				}
 
@@ -73,10 +87,23 @@ func Start(ctx context.Context, url string, ch chan []string) {
 	}()
 }
 
-func fetchMembers() ([]string, error) {
-	resp, err := client.Get(targetUrl)
+func (p *Poller) fetchMembers() ([]string, error) {
+	req, err := http.NewRequest(http.MethodGet, p.targetUrl, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get members list: %w\n", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	if p.tag > 0 {
+		req.Header.Set("x-tag", strconv.FormatUint(p.tag, 10))
+	}
+
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get members list: %w", err)
+	}
+
+	if resp.StatusCode == http.StatusNotModified {
+		return nil, nil
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -84,6 +111,20 @@ func fetchMembers() ([]string, error) {
 	}
 
 	defer resp.Body.Close()
+
+	tag := resp.Header.Get("x-tag")
+	if tag != "" {
+		parsedTag, err := strconv.ParseUint(tag, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse x-tag: %w", err)
+		}
+
+		log.Printf("[ROUTER] tag changed: tag %d -> %d\n", p.tag, parsedTag)
+		p.tag = parsedTag
+	} else {
+		log.Println("[ROUTER] missing x-tag")
+		p.tag = 0
+	}
 
 	var respData registry.MembersResp
 	err = json.NewDecoder(resp.Body).Decode(&respData)

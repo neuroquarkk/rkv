@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"rkv/internal/constants"
 	"rkv/internal/registry"
 	"time"
 )
@@ -17,7 +18,7 @@ var (
 
 func Start(ctx context.Context, url string, addr string, d time.Duration) {
 	client = &http.Client{
-		Timeout: 2 * time.Second,
+		Timeout: constants.ClientTimeout,
 	}
 	targetUrl = "http://" + url + "/heartbeat"
 
