@@ -47,7 +47,7 @@ func do(addr string) {
 
 	data, err := json.Marshal(&req)
 	if err != nil {
-		log.Printf("failed to marshal: %v\n", err)
+		log.Printf("[SHARD] failed to marshal: %v\n", err)
 		return
 	}
 
@@ -57,11 +57,11 @@ func do(addr string) {
 		bytes.NewBuffer(data),
 	)
 	if err != nil {
-		log.Printf("failed to send heartbeat: %v\n", err)
+		log.Printf("[SHARD] failed to send heartbeat: %v\n", err)
 		return
 	}
 	if resp.StatusCode != http.StatusAccepted {
-		log.Printf("registry rejected heartbeat %d\n", resp.StatusCode)
+		log.Printf("[SHARD] registry rejected heartbeat %d\n", resp.StatusCode)
 	}
 	resp.Body.Close()
 }

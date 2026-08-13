@@ -19,8 +19,12 @@ func (s *Server) Heartbeat(w http.ResponseWriter, r *http.Request) {
 	r.Body.Close()
 
 	s.mu.Lock()
+	_, exists := s.state[data.Address]
 	s.state[data.Address] = time.Now()
 	s.mu.Unlock()
+	if !exists {
+		log.Printf("[REGISTRY] new member joined: %v\n", data.Address)
+	}
 
 	w.WriteHeader(http.StatusAccepted)
 }

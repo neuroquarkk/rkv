@@ -33,7 +33,7 @@ func Start(ctx context.Context, url string, ch chan []string) {
 			initialAddrs = addrs
 			break
 		}
-		log.Println(err)
+		log.Printf("[ROUTER] %v\n", err)
 
 		select {
 		case <-ctx.Done():
@@ -55,7 +55,7 @@ func Start(ctx context.Context, url string, ch chan []string) {
 			case <-ticker.C:
 				addrs, err := fetchMembers()
 				if err != nil {
-					log.Println(err)
+					log.Printf("[ROUTER] %v\n", err)
 					continue
 				}
 

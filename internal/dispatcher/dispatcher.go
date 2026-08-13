@@ -39,6 +39,7 @@ func (c *Client) Start(ctx context.Context, ch <-chan []string) {
 func (c *Client) process(addrs []string) {
 	// comparing the absolute state from the registry again our current local state
 	newSet := make(map[string]bool, len(addrs))
+	added, removed := 0, 0
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -52,6 +53,7 @@ func (c *Client) process(addrs []string) {
 				log.Printf("failed to add %s: %v\n", addr, err)
 				continue
 			}
+			added++
 		}
 	}
 
@@ -59,7 +61,15 @@ func (c *Client) process(addrs []string) {
 	for addr := range c.conns {
 		if !newSet[addr] {
 			c.removeMember(addr)
+			removed++
 		}
+	}
+
+	if added > 0 || removed > 0 {
+		log.Printf(
+			"[ROUTER] membership changed: +%d -%d, total=%d\n",
+			added, removed, len(c.clients),
+		)
 	}
 }
 
@@ -76,6 +86,7 @@ func (c *Client) addMember(addr string) error {
 
 	c.conns[addr] = conn
 	c.clients[addr] = client
+	log.Printf("[ROUTER] added member: %v\n", addr)
 	return nil
 }
 
@@ -83,4 +94,5 @@ func (c *Client) removeMember(addr string) {
 	c.conns[addr].Close()
 	delete(c.conns, addr)
 	delete(c.clients, addr)
+	log.Printf("[ROUTER] removed member: %v\n", addr)
 }
