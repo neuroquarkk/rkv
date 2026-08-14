@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"net"
+	"os/signal"
+	"syscall"
 
 	pb "rkv/gen"
 	"rkv/internal/config"
@@ -17,7 +19,9 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, cancel := signal.NotifyContext(
+		context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 	cfg := config.NewShard()
 
 	lis, err := net.Listen("tcp", cfg.PORT)
@@ -26,9 +30,9 @@ func main() {
 	}
 
 	st := store.New()
-	reporter.Start(
-		ctx, cfg.REGISTRY_URL, cfg.SHARD_ADDR, constants.ReporterTick,
-	)
+	rt := reporter.New(cfg.REGISTRY_URL, cfg.SHARD_ADDR)
+
+	rt.Start(ctx, constants.ReporterTick)
 
 	service := service.New(st, cfg.SHARD_ADDR)
 
@@ -38,7 +42,15 @@ func main() {
 	pb.RegisterShardServiceServer(server, service)
 
 	log.Printf("service starting on PORT: %v\n", lis.Addr())
-	if err := server.Serve(lis); err != nil {
-		log.Fatalf("failed to server: %v\n", err)
-	}
+	go func() {
+		if err := server.Serve(lis); err != nil {
+			log.Printf("failed to serve: %v\n", err)
+			cancel()
+		}
+	}()
+
+	<-ctx.Done()
+
+	rt.Leave()
+	server.GracefulStop()
 }

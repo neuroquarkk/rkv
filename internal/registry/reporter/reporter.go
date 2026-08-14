@@ -11,21 +11,31 @@ import (
 	"time"
 )
 
-var (
-	client    *http.Client
-	targetUrl string
-)
+type Reporter struct {
+	client      *http.Client
+	registryUrl string
+	addr        string
+}
 
-func Start(ctx context.Context, url string, addr string, d time.Duration) {
-	client = &http.Client{
+func New(url string, addr string) *Reporter {
+	client := &http.Client{
 		Timeout: constants.ClientTimeout,
 	}
-	targetUrl = "http://" + url + "/heartbeat"
+
+	return &Reporter{
+		client:      client,
+		registryUrl: url,
+		addr:        addr,
+	}
+}
+
+func (r *Reporter) Start(ctx context.Context, d time.Duration) {
+	targetUrl := "http://" + r.registryUrl + "/heartbeat"
 
 	// discover immediately with a soft dependency
 	// periodic retries handle failures in the background
 	// allowing the member to start without waiting for discovery to succeed
-	do(addr)
+	r.do(targetUrl, http.StatusAccepted)
 
 	go func() {
 		ticker := time.NewTicker(d)
@@ -35,15 +45,20 @@ func Start(ctx context.Context, url string, addr string, d time.Duration) {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				do(addr)
+				r.do(targetUrl, http.StatusAccepted)
 			}
 		}
 	}()
 }
 
-func do(addr string) {
-	req := &registry.HeartbeatReq{
-		Address: addr,
+func (r *Reporter) Leave() {
+	targetUrl := "http://" + r.registryUrl + "/leave"
+	r.do(targetUrl, http.StatusNoContent)
+}
+
+func (r *Reporter) do(targetUrl string, expectedCode int) {
+	req := &registry.MemberReq{
+		Address: r.addr,
 	}
 
 	data, err := json.Marshal(&req)
@@ -52,17 +67,17 @@ func do(addr string) {
 		return
 	}
 
-	resp, err := client.Post(
+	resp, err := r.client.Post(
 		targetUrl,
 		"application/json",
 		bytes.NewBuffer(data),
 	)
 	if err != nil {
-		log.Printf("[SHARD] failed to send heartbeat: %v\n", err)
+		log.Printf("[SHARD] failed to send: %v\n", err)
 		return
 	}
-	if resp.StatusCode != http.StatusAccepted {
-		log.Printf("[SHARD] registry rejected heartbeat %d\n", resp.StatusCode)
+	if resp.StatusCode != expectedCode {
+		log.Printf("[SHARD] registry rejected %d\n", resp.StatusCode)
 	}
 	resp.Body.Close()
 }

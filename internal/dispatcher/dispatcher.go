@@ -36,6 +36,15 @@ func (c *Client) Start(ctx context.Context, ch <-chan []string) {
 	}()
 }
 
+func (c *Client) Close() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for _, conn := range c.conns {
+		conn.Close()
+	}
+}
+
 func (c *Client) process(addrs []string) {
 	// comparing the absolute state from the registry again our current local state
 	newSet := make(map[string]bool, len(addrs))

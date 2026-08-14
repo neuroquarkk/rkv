@@ -1,6 +1,6 @@
 package registry
 
-type HeartbeatReq struct {
+type MemberReq struct {
 	Address string `json:"address"`
 }
 

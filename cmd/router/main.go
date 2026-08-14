@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os/signal"
+	"syscall"
 
 	"rkv/internal/config"
 	"rkv/internal/dispatcher"
@@ -13,14 +15,19 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, cancel := signal.NotifyContext(
+		context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 	cfg := config.NewRouter()
 
 	addrsChan := make(chan []string, 1)
-	disp := dispatcher.New()
-	poller := poller.New(cfg.REGISTRY_URL)
 
+	poller := poller.New(cfg.REGISTRY_URL)
 	poller.Start(ctx, addrsChan)
+
+	disp := dispatcher.New()
+	defer disp.Close()
+
 	disp.Start(ctx, addrsChan)
 
 	handler := handler.New(disp)
@@ -39,7 +46,14 @@ func main() {
 	}
 
 	log.Printf("router starting on PORT: %v\n", cfg.PORT)
-	if err := server.ListenAndServe(); err != nil {
-		log.Fatalf("failed to serve: %v\n", err)
-	}
+	go func() {
+		if err := server.ListenAndServe(); err != nil {
+			log.Printf("failed to serve: %v\n", err)
+			cancel()
+		}
+	}()
+
+	<-ctx.Done()
+
+	server.Shutdown(context.TODO())
 }
