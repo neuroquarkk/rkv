@@ -2,13 +2,8 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
-	"log"
 	"net/http"
 	"rkv/internal/dispatcher"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type Handler struct {
@@ -45,24 +40,7 @@ func (h *Handler) Put(w http.ResponseWriter, r *http.Request) {
 
 	err := h.client.Put(r.Context(), key, []byte(value))
 	if err != nil {
-		if errors.Is(err, dispatcher.ErrNoMembers) {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			return
-		}
-
-		st, ok := status.FromError(err)
-		if !ok {
-			log.Printf("unexpected status: %v\n", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		if st.Code() == codes.InvalidArgument {
-			w.WriteHeader(http.StatusBadRequest)
-		} else {
-			log.Printf("grpc error: code=%s, msg=%v\n", st.Code(), st.Message())
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(statusFor(err, putCodes))
 		return
 	}
 
@@ -78,27 +56,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 
 	data, err := h.client.Get(r.Context(), key)
 	if err != nil {
-		if errors.Is(err, dispatcher.ErrNoMembers) {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			return
-		}
-
-		st, ok := status.FromError(err)
-		if !ok {
-			log.Printf("unexpected status: %v\n", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		switch st.Code() {
-		case codes.NotFound:
-			w.WriteHeader(http.StatusNotFound)
-		case codes.Internal:
-			w.WriteHeader(http.StatusInternalServerError)
-		default:
-			log.Printf("grpc error: code=%s, msg=%v\n", st.Code(), st.Message())
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(statusFor(err, getCodes))
 		return
 	}
 
@@ -114,28 +72,9 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.client.Delete(r.Context(), key); err != nil {
-		if errors.Is(err, dispatcher.ErrNoMembers) {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			return
-		}
-
-		st, ok := status.FromError(err)
-		if !ok {
-			log.Printf("unexpected status: %v\n", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		switch st.Code() {
-		case codes.NotFound:
-			w.WriteHeader(http.StatusNotFound)
-		case codes.Internal:
-			w.WriteHeader(http.StatusInternalServerError)
-		default:
-			log.Printf("grpc error: code=%s, msg=%v\n", st.Code(), st.Message())
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+	err := h.client.Delete(r.Context(), key)
+	if err != nil {
+		w.WriteHeader(statusFor(err, deleteCodes))
 		return
 	}
 
@@ -151,25 +90,7 @@ func (h *Handler) Exists(w http.ResponseWriter, r *http.Request) {
 
 	exists, err := h.client.Exists(r.Context(), key)
 	if err != nil {
-		if errors.Is(err, dispatcher.ErrNoMembers) {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			return
-		}
-
-		st, ok := status.FromError(err)
-		if !ok {
-			log.Printf("unexpected status: %v\n", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		if st.Code() == codes.NotFound {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		log.Printf("grpc error: code=%s, msg=%v\n", st.Code(), st.Message())
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(statusFor(err, existsCodes))
 		return
 	}
 
@@ -184,8 +105,7 @@ func (h *Handler) Exists(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Info(w http.ResponseWriter, r *http.Request) {
 	names, err := h.client.Info(r.Context())
 	if err != nil {
-		log.Printf("unexpected error: %v\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(statusFor(err, infoCodes))
 		return
 	}
 

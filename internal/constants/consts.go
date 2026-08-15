@@ -13,6 +13,13 @@ const (
 	// Poller constants
 	PollerTick = 5 * time.Second
 
+	// Dispatcher call timeouts per-method
+	PutTimeout    = 2 * time.Second
+	GetTimeout    = 2 * time.Second
+	DeleteTimeout = 2 * time.Second
+	ExistsTimeout = 2 * time.Second
+	InfoTimeout   = 5 * time.Second
+
 	// Common constants
 	ClientTimeout = 2 * time.Second
 )

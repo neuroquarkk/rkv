@@ -3,6 +3,7 @@ package dispatcher
 import (
 	"context"
 	pb "rkv/gen"
+	"rkv/internal/constants"
 )
 
 func (c *Client) Put(
@@ -14,6 +15,9 @@ func (c *Client) Put(
 	if err != nil {
 		return err
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, constants.PutTimeout)
+	defer cancel()
 
 	_, err = client.Put(ctx, &pb.PutRequest{
 		Key:  key,
@@ -27,6 +31,9 @@ func (c *Client) Get(ctx context.Context, key string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, constants.GetTimeout)
+	defer cancel()
 
 	resp, err := client.Get(ctx, &pb.GetRequest{Key: key})
 	if err != nil {
@@ -43,6 +50,9 @@ func (c *Client) Delete(ctx context.Context, key string) error {
 		return err
 	}
 
+	ctx, cancel := context.WithTimeout(ctx, constants.DeleteTimeout)
+	defer cancel()
+
 	_, err = client.Delete(ctx, &pb.DeleteRequest{Key: key})
 	return err
 }
@@ -53,6 +63,9 @@ func (c *Client) Exists(ctx context.Context, key string) (bool, error) {
 		return false, err
 	}
 
+	ctx, cancel := context.WithTimeout(ctx, constants.ExistsTimeout)
+	defer cancel()
+
 	resp, err := client.Exists(ctx, &pb.ExistsRequest{Key: key})
 	if err != nil {
 		return false, err
@@ -62,6 +75,9 @@ func (c *Client) Exists(ctx context.Context, key string) (bool, error) {
 
 func (c *Client) Info(ctx context.Context) ([]string, error) {
 	addr := make([]string, 0, len(c.clients))
+
+	ctx, cancel := context.WithTimeout(ctx, constants.InfoTimeout)
+	defer cancel()
 
 	c.mu.RLock()
 	defer c.mu.RUnlock()
