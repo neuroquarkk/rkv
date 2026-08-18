@@ -8,8 +8,10 @@ const (
 	SweeperTick   = 5 * time.Second
 
 	// Shard constants
-	ReporterTick = 5 * time.Second
-	NumBuckets   = 256 // should be power of 2
+	ReporterTick       = 5 * time.Second
+	NumBuckets         = 256 // should be power of 2
+	EvictionSampleSize = 5
+	MaxStorageSize     = 512 * 1024 * 1024 // 512mb => 2mb/bucket
 
 	// Poller constants
 	PollerTick = 5 * time.Second
