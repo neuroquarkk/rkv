@@ -9,6 +9,7 @@ const (
 
 	// Shard constants
 	ReporterTick = 5 * time.Second
+	NumBuckets   = 256 // should be power of 2
 
 	// Poller constants
 	PollerTick = 5 * time.Second
