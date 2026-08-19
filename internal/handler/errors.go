@@ -2,9 +2,12 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"rkv/internal/constants"
 	"rkv/internal/dispatcher"
 
 	"google.golang.org/grpc/codes"
@@ -59,4 +62,32 @@ func statusFor(err error, m codeMap) int {
 
 	log.Printf("grpc error: code=%s, msg=%v\n", st.Code(), st.Message())
 	return http.StatusInternalServerError
+}
+
+func writeJSONError(w http.ResponseWriter, status int, msg string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(map[string]string{"error": msg})
+}
+
+func validateKey(key string) error {
+	if key == "" {
+		return errors.New("key cannot be empty")
+	}
+	if len(key) > constants.MaxKeySize {
+		return fmt.Errorf("key exceeds max size of %d bytes",
+			constants.MaxKeySize)
+	}
+	return nil
+}
+
+func validateValue(value string) error {
+	if value == "" {
+		return errors.New("value cannot be empty")
+	}
+	if len(value) > constants.MaxValueSize {
+		return fmt.Errorf("value exceeds max size of %d bytes",
+			constants.MaxValueSize)
+	}
+	return nil
 }

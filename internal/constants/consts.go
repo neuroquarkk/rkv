@@ -25,4 +25,8 @@ const (
 
 	// Common constants
 	ClientTimeout = 2 * time.Second
+
+	// Size Limits
+	MaxKeySize   = 256  // bytes
+	MaxValueSize = 1024 // bytes
 )

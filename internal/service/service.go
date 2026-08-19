@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	pb "rkv/gen"
+
 	"rkv/internal/store"
 
 	"google.golang.org/grpc/codes"
@@ -26,8 +27,11 @@ func (s *Service) Put(
 	req *pb.PutRequest,
 ) (*pb.PutResponse, error) {
 	key, data := req.Key, req.Data
-	if key == "" || len(data) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "empty key or data")
+	if err := validateKey(key); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := validateValue(data); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	s.store.Put(key, []byte(data))
@@ -39,8 +43,8 @@ func (s *Service) Get(
 	req *pb.GetRequest,
 ) (*pb.GetResponse, error) {
 	key := req.Key
-	if key == "" {
-		return nil, status.Error(codes.InvalidArgument, "empty key")
+	if err := validateKey(key); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	data, err := s.store.Get(key)
@@ -61,8 +65,8 @@ func (s *Service) Exists(
 	req *pb.ExistsRequest,
 ) (*pb.ExistsResponse, error) {
 	key := req.Key
-	if key == "" {
-		return nil, status.Error(codes.InvalidArgument, "empty key")
+	if err := validateKey(key); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	exists := s.store.Exists(key)
@@ -74,8 +78,8 @@ func (s *Service) Delete(
 	req *pb.DeleteRequest,
 ) (*pb.DeleteResponse, error) {
 	key := req.Key
-	if key == "" {
-		return nil, status.Error(codes.InvalidArgument, "empty key")
+	if err := validateKey(key); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err := s.store.Delete(key); err != nil {
