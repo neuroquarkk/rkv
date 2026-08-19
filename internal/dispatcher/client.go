@@ -80,9 +80,13 @@ func (c *Client) Info(ctx context.Context) ([]string, error) {
 	defer cancel()
 
 	c.mu.RLock()
-	defer c.mu.RUnlock()
-
+	clients := make([]pb.ShardServiceClient, 0, len(c.clients))
 	for _, sc := range c.clients {
+		clients = append(clients, sc)
+	}
+	c.mu.RUnlock()
+
+	for _, sc := range clients {
 		resp, err := sc.Info(ctx, &pb.InfoRequest{})
 		if err != nil {
 			return nil, err

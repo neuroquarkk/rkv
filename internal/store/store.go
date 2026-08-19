@@ -17,7 +17,7 @@ const numBuckets = uint64(constants.NumBuckets)
 
 type entry struct {
 	value      []byte
-	accessedAt atomic.Int64
+	accessedAt atomic.Int64 // atomic because Get() mutates this under RLock
 }
 
 type bucket struct {

@@ -57,6 +57,8 @@ func (r *Reporter) Leave() {
 }
 
 func (r *Reporter) do(targetUrl string, expectedCode int) {
+	// failures are log only with no retry
+	// next heartbeat tick self heals
 	req := &registry.MemberReq{
 		Address: r.addr,
 	}

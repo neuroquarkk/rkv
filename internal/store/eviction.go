@@ -6,6 +6,7 @@ import (
 )
 
 func (b *bucket) evictLocked() {
+	// sampled LRU
 	for b.size > b.budget {
 		i := 0
 
