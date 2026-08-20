@@ -26,41 +26,17 @@ services:
     depends_on:
       - registry
 
-  member-1:
+  member:
     build:
       context: .
       args:
         APP_NAME: shard
     environment:
       PORT: 8080
-      SHARD_ADDR: member-1:8080
       REGISTRY_URL: registry:8010
-    restart: unless-stopped
-    depends_on:
-      - registry
-
-  member-2:
-    build:
-      context: .
-      args:
-        APP_NAME: shard
-    environment:
-      PORT: 8080
-      SHARD_ADDR: member-2:8080
-      REGISTRY_URL: registry:8010
-    restart: unless-stopped
-    depends_on:
-      - registry
-
-  member-3:
-    build:
-      context: .
-      args:
-        APP_NAME: shard
-    environment:
-      PORT: 8080
-      SHARD_ADDR: member-3:8080
-      REGISTRY_URL: registry:8010
+      # no fixed SHARD_ADDR because each replica derives its own
+    deploy:
+      replicas: 2
     restart: unless-stopped
     depends_on:
       - registry

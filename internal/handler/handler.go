@@ -41,7 +41,8 @@ func (h *Handler) Put(w http.ResponseWriter, r *http.Request) {
 
 	err := h.client.Put(r.Context(), key, []byte(value))
 	if err != nil {
-		writeJSONError(w, statusFor(err, putCodes), err.Error())
+		status, msg := statusFor(err, putCodes)
+		writeJSONError(w, status, msg)
 		return
 	}
 
@@ -57,7 +58,8 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 
 	data, err := h.client.Get(r.Context(), key)
 	if err != nil {
-		writeJSONError(w, statusFor(err, getCodes), err.Error())
+		status, msg := statusFor(err, getCodes)
+		writeJSONError(w, status, msg)
 		return
 	}
 
@@ -75,7 +77,8 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	err := h.client.Delete(r.Context(), key)
 	if err != nil {
-		writeJSONError(w, statusFor(err, deleteCodes), err.Error())
+		status, msg := statusFor(err, deleteCodes)
+		writeJSONError(w, status, msg)
 		return
 	}
 
@@ -91,7 +94,8 @@ func (h *Handler) Exists(w http.ResponseWriter, r *http.Request) {
 
 	exists, err := h.client.Exists(r.Context(), key)
 	if err != nil {
-		writeJSONError(w, statusFor(err, existsCodes), err.Error())
+		status, msg := statusFor(err, existsCodes)
+		writeJSONError(w, status, msg)
 		return
 	}
 
@@ -105,7 +109,8 @@ func (h *Handler) Exists(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Info(w http.ResponseWriter, r *http.Request) {
 	names, err := h.client.Info(r.Context())
 	if err != nil {
-		writeJSONError(w, statusFor(err, infoCodes), err.Error())
+		status, msg := statusFor(err, infoCodes)
+		writeJSONError(w, status, msg)
 		return
 	}
 

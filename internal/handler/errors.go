@@ -38,30 +38,30 @@ var (
 	infoCodes = codeMap{}
 )
 
-func statusFor(err error, m codeMap) int {
+func statusFor(err error, m codeMap) (int, string) {
 	// order: no-members -> 503, deadline -> 408
 	// endpoint specific grpc code -> mapped
 	// anything else -> 500 + logged
 	if errors.Is(err, dispatcher.ErrNoMembers) {
-		return http.StatusServiceUnavailable
+		return http.StatusServiceUnavailable, "no shards available"
 	}
 
 	if errors.Is(err, context.DeadlineExceeded) {
-		return http.StatusRequestTimeout
+		return http.StatusRequestTimeout, "request timed out"
 	}
 
 	st, ok := status.FromError(err)
 	if !ok {
 		log.Printf("unexpected error: %v\n", err)
-		return http.StatusInternalServerError
+		return http.StatusInternalServerError, "internal error"
 	}
 
 	if code, mapped := m[st.Code()]; mapped {
-		return code
+		return code, st.Message()
 	}
 
 	log.Printf("grpc error: code=%s, msg=%v\n", st.Code(), st.Message())
-	return http.StatusInternalServerError
+	return http.StatusInternalServerError, "internal error"
 }
 
 func writeJSONError(w http.ResponseWriter, status int, msg string) {
